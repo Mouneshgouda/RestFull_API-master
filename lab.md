@@ -61,6 +61,70 @@ Authorization: Bearer <your_jwt_token>
 }
 
 ```
+### 4
+
+```python
+
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+
+# Setup SQLite database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize SQLAlchemy
+db = SQLAlchemy(app)
+
+# Example model
+class Item(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+
+# Initialize the database (Uncomment to create database schema if needed)
+with app.app_context():
+    db.create_all()
+    
+    # Insert test data if needed
+    if Item.query.count() == 0:  # Check if the database is empty
+        db.session.add(Item(name="Item 1", description="This is item 1"))
+        db.session.add(Item(name="Item 2", description="This is item 2"))
+        db.session.add(Item(name="Item 3", description="This is item 3"))
+        db.session.add(Item(name="Item 4", description="This is item 4"))
+        db.session.add(Item(name="Item 5", description="This is item 5"))
+        db.session.commit()
+
+@app.route('/items', methods=['GET'])
+def get_items():
+    # Get pagination parameters from query string
+    page = request.args.get('page', 1, type=int)  # Default to page 1
+    per_page = request.args.get('per_page', 10, type=int)  # Default to 10 items per page
+    
+    # Query items with pagination
+    items = Item.query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Prepare data to return
+    result = {
+        'total': items.total,
+        'pages': items.pages,
+        'current_page': items.page,
+        'items': [
+            {
+                'id': item.id,
+                'name': item.name,
+                'description': item.description
+            }
+            for item in items.items
+        ]
+    }
+    
+    return jsonify(result)
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
 
 
 
