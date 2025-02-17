@@ -126,6 +126,107 @@ if __name__ == '__main__':
     app.run(debug=True)
 ```
 
+### 5
+```python
+
+from flask import Flask, request, jsonify
+from marshmallow import Schema, fields, validate, ValidationError
+from werkzeug.exceptions import HTTPException
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Define Marshmallow schema for data validation
+class UserSchema(Schema):
+    name = fields.String(required=True, validate=validate.Length(min=1, error="Name cannot be empty"))
+    email = fields.Email(required=True, error="Invalid email address")
+    age = fields.Integer(required=True, validate=validate.Range(min=18, error="Age must be at least 18"))
+    
+# Custom error handler for Marshmallow validation errors
+@app.errorhandler(ValidationError)
+def handle_validation_error(error):
+    response = jsonify({"message": "Validation failed", "errors": error.messages})
+    response.status_code = 400
+    return response
+
+# General error handler
+@app.errorhandler(HTTPException)
+def handle_http_exception(error):
+    response = jsonify({"message": error.description})
+    response.status_code = error.code
+    return response
+
+# POST endpoint to create a user
+@app.route('/users', methods=['POST'])
+def create_user():
+    # Validate the incoming JSON using Marshmallow schema
+    try:
+        user_data = request.get_json()
+        user_schema = UserSchema()
+        result = user_schema.load(user_data)  # This validates and deserializes the data
+    except ValidationError as err:
+        return handle_validation_error(err)
+
+    # Simulate saving the user (in real applications, save to database)
+    return jsonify({"message": "User created successfully", "data": result}), 201
+
+# Run the Flask app
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
+
+
+```
+- Test the API using Postman or cURL:
+ Valid Request:
+
+```json
+POST /users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john.doe@example.com",
+  "age": 25
+}
+```
+```json
+Response:
+
+json
+Copy
+{
+  "message": "User created successfully",
+  "data": {
+    "name": "John Doe",
+    "email": "john.doe@example.com",
+    "age": 25
+  }
+}
+```
+Invalid Request (e.g., age less than 18):
+
+``` json
+POST /users
+Content-Type: application/json
+
+{
+  "name": "Jane Doe",
+  "email": "jane.doe@example.com",
+  "age": 15
+}
+```
+```json
+Response:
+
+json
+Copy
+{
+  "message": "Validation failed",
+  "errors": {
+    "age": ["Age must be at least 18"]
+  }
+}
+```
 
