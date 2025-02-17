@@ -41,3 +41,27 @@ if __name__ == '__main__':
 
 
 ```
+
+
+- Steps to Test:
+ Login Request: Send a POST request to /login with the correct username and password.
+```json
+{
+  "username": "admin",
+  "password": "password123"
+}
+
+```
+- Access Protected Route: Once you receive the JWT token, include it in the Authorization header as a Bearer token and send a GET request to /protected:
+```
+Authorization: Bearer <your_jwt_token>
+
+{
+  "logged_in_as": "admin"
+}
+
+```
+
+
+
+
